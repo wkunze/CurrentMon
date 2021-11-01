@@ -1,6 +1,8 @@
 #imports
 from gpiozero import Button
 from gpiozero import LED
+from gpiozero import DigitalInputDevice
+from gpiozero import DigitalOutputDevice
 
 import smbus
 
@@ -10,7 +12,7 @@ DEVICE_ADDR = 0x48
 
 #GPIO Mapping
 RedLED = LED("GPIO24")
-YellowLED = LED("GPIO19")
+YellowLED = LED("GPIO10")
 GreenLED = LED("GPIO21")
 
 Switch1 = Button("GPIO13")
@@ -21,7 +23,6 @@ Switch4 = Button("GPIO20")
 Button1 = Button("GPIO11")
 Button2 = Button("GPIO8")
 Button3 = Button("GPIO7")
-
 
 Alert = DigitalInputDevice("GPIO22")
 HighEn = DigitalOutputDevice("GPIO5")
