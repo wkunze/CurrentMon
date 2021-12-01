@@ -14,9 +14,9 @@ DEVICE_BUS = 1
 DEVICE_ADDR = 0x48
         
 #GPIO Mapping
-RedLED = LED("GPIO24", active_high=False, initial_value=False)
+RedLED = LED("GPIO9", active_high=False, initial_value=False)
 YellowLED = LED("GPIO10", active_high=False, initial_value=False)
-GreenLED = LED("GPIO9", active_high=False, initial_value=False)
+GreenLED = LED("GPIO24", active_high=False, initial_value=False)
 
 LED1 = LED("GPIO21", active_high=False, initial_value=False)
 LED2 = LED("GPIO26", active_high=False, initial_value=False)
@@ -26,8 +26,8 @@ Switch2 = DigitalInputDevice("GPIO19", pull_up=None, active_state=True)
 Switch3 = DigitalInputDevice("GPIO16", pull_up=None, active_state=True)
 Switch4 = DigitalInputDevice("GPIO20", pull_up=None, active_state=True)
 
-Button1 = Button("GPIO11", pull_up=True, active_state=None) #start button
-#Button1 = Button("GPIO11", pull_up=None, active_state=False) #start button
+#Button1 = Button("GPIO11", pull_up=True, active_state=None) #start button
+Button1 = Button("GPIO11", pull_up=None, active_state=False) #start button
 Button2 = Button("GPIO8", pull_up=None, active_state=False) #reset button
 Button3 = Button("GPIO7", pull_up=None, active_state=False)
 
@@ -36,53 +36,93 @@ HighEn = DigitalOutputDevice("GPIO5", active_high=False, initial_value=True) #ac
 MidEn = DigitalOutputDevice("GPIO6", active_high=False, initial_value=True)
 LowEn = DigitalOutputDevice("GPIO12", active_high=False, initial_value=True)
 
-#Configure SMBus
-#make sure that I2C is enabled in RPi config
-I2C1 = smbus.SMBus(DEVICE_BUS) #bus 1 is pin 3 and 5 of the header
+def SwitchState() :
+    Switches = Switch1.value + Switch2.value * 2 + Switch3.value * 4 + Switch4.value * 8
+    print("Test Configuration = ",Switches)
+    #set test parameters based on switches
+    if(Switches == 0):
+        highDuration = 10 #sec
+        currentMax = 200000 #uA
+        currentSleep = 200 #uA
+        currentAwake = 50000 #uA
+    else:
+        highDuration = 20 #sec
+        currentMax = 400000 #uA
+        currentSleep = 100 #uA
+        currentAwake = 60000 #uA  
 
-def TestResult(Result, FailCode):
+    return highDuration,currentMax,currentSleep,currentAwake
+
+def TestResult(Result, FailCode)  :
     if Result:
         GreenLED.on()
         YellowLED.off()
-        print("Pass\n")
+        print("***** Pass *****\n")
     else:
         RedLED.on()
-        YellowLED.off()
+        YellowLED.off()         
         print(FailCode)
+        print("***** Fail *****\n")
     return Result
-        
+
+def LEDsOff() :
+    RedLED.off()
+    YellowLED.off()
+    GreenLED.off()
+    return 1
+
+def RelayState(Low,Mid,High) : #Boolens
+    if(Low) :
+        LowEn.on()
+        result = 1
+    else :
+        LowEn.off()
+        result = 0
+
+    if(Mid) :
+        MidEn.on()
+        result = result + 2
+    else :
+        MidEn.off()
+
+    if(High) :
+        HighEn.on()
+        result = result + 4
+    else :
+        HighEn.off()
+
+    return result; 
 
 #initialization
-HighEn.off()
-MidEn.off()
-LowEn.off()
-LED1.off()
-LED2.off()
-RedLED.off()
-YellowLED.off()
-GreenLED.off()
+
+#Configure SMBus
+#make sure that I2C is enabled in RPi config
+I2C1 = smbus.SMBus(DEVICE_BUS) #bus 1 is pin 3 and 5 of the header
+RelayState(False,False,False)
+LEDsOff()
+#set for continuous sampling on ADC.  Rest is defaults
+I2C1.write_i2c_block_data(DEVICE_ADDR,0x01,[0x84,0x83])
 
 #startup sequence
 LED1.on()
-sleep(0.25)
+sleep(0.5)
 LED2.on()
-sleep(0.25)
+sleep(0.5)
 RedLED.on()
-sleep(0.25)
+sleep(0.5)
 YellowLED.on()
-sleep(0.25)
+sleep(0.5)
 GreenLED.on()
-sleep(0.25)
+sleep(0.5)
 LED1.off()
-sleep(0.25)
+sleep(0.5)
 LED2.off()
-sleep(0.25)
+sleep(0.5)
 RedLED.off()
-sleep(0.25)
+sleep(0.5)
 YellowLED.off()
-sleep(0.25)
+sleep(0.5)
 GreenLED.off()
-LED1.on()Pass omparator
 
 #I2C1.write_i2c_block_data(DEVICE_ADDR,command,data)
 #I2C1.write_byte_data(DEVICE_ADDR, command, value)
@@ -91,26 +131,18 @@ LED1.on()Pass omparator
 #execution loop
 
 while True:   
+    print("Set Switches for Test Configuration, then press the Start Button to Begin")
     Button1.wait_for_press()
-    print("Starting Test\n")
-    #Yellow LED means test i process
-    YellowLED.blink(on_time=0.25,off_time=0.25)
-
     #configuration switches
-    Mode = Switch1.value + (Switch2.value * 2) + (Switch3.value * 4) + (Switch4.value * 8)
+    LEDsOff()
+    print("Starting Test")
+
+    #Blinking Yellow LED means test in process
+    YellowLED.blink(on_time=0.25,off_time=0.25)
+   
     Pass = True
     
-    #set test parameters based on switches
-    if(Mode == 0):
-        highDuration = 10 #sec
-        currentMax = 200000 #uA
-        currentSleep = 200 #uA
-        currentAwake = 50000 #uA
-    else:
-        highDuration = 10 #sec
-        currentMax = 200000 #uA
-        currentSleep = 200 #uA
-        currentAwake = 50000 #uA  
+    highDuration,currentMax,currentSleep,currentAwake = SwitchState()
 
     #test high current path
     #check for mA range current during the power on init.  Current most drop (sleep) before configured end time
@@ -124,26 +156,23 @@ while True:
     OverCurrent = False
 
     while (not OverCurrent) and ((HighTime - Highstart) < highDuration):
-        CurrentSample = 1 #need to put I2C conversion read here
-        if CurrentSample > currentMax: #Overcurrent condition, stop immediately
+        CurrentSample = I2C1.read_i2c_block_data(DEVICE_ADDR,0x00,2)
+        print("data ",CurrentSample)
+        Current = CurrentSample[0] * 256 + CurrentSample[1]
+
+        if Current > currentMax: #Overcurrent condition, stop immediately
             OverCurrent = True
             HighEn.off()
             TestResult(False, "OverCurrent\n")
             Pass = False
         else:
-            CurrentSum = CurrentSum + CurrentSample
+            CurrentSum = CurrentSum + Current
             Count = Count + 1
             HighTime = time()
     print("High Current Stage Conplete\n")
 
+    #check if the voltage has dropped (device is asleep)
+    CurrentSample = 1 #need to put I2C conversion read here
 
- 
-
-
-
-
-
-
-
-
+    TestResult(False, "Over Current")
 
