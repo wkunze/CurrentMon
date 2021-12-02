@@ -65,40 +65,57 @@ def TestResult(Result, FailCode)  :
         print("***** Fail *****\n")
     return Result
 
+# function to turn off the three result LEDs
 def LEDsOff() :
     RedLED.off()
     YellowLED.off()
     GreenLED.off()
     return 1
 
-def RelayState(Low,Mid,High) : #Boolens
-    if(Low) :
-        LowEn.on()
-        result = 1
-    else :
+#set the current sense resistor releast
+def RelayState(Low, Mid, High) : #Boolens
+    if High:
         LowEn.off()
-        result = 0
-
-    if(Mid) :
-        MidEn.on()
-        result = result + 2
-    else :
         MidEn.off()
-
-    if(High) :
         HighEn.on()
-        result = result + 4
-    else :
+        Low = 0
+        Mid = 0
+        High = 1
+    
+    elif Mid:
+        LowEn.off()
+        MidEn.on()
         HighEn.off()
+        Low = 0
+        Mid = 1
+        High = 0
 
-    return result; 
+    elif Low:
+        LowEn.on()
+        MidEn.off()
+        HighEn.off()
+        Low = 1
+        Mid = 0
+        High = 0
+
+    else:
+        LowEn.off()
+        MidEn.off()
+        HighEn.off()
+        Low = 0
+        Mid = 0
+        High = 0
+
+    return Low, Mid, High
+
+
 
 #initialization
 
 #Configure SMBus
 #make sure that I2C is enabled in RPi config
 I2C1 = smbus.SMBus(DEVICE_BUS) #bus 1 is pin 3 and 5 of the header
-RelayState(False,False,False)
+RelayState(False, False, False)
 LEDsOff()
 #set for continuous sampling on ADC.  Rest is defaults
 I2C1.write_i2c_block_data(DEVICE_ADDR,0x01,[0x84,0x83])
