@@ -1,5 +1,4 @@
 #imports
-from typing import DefaultDict
 from gpiozero import Button
 from gpiozero import LED
 from gpiozero import DigitalInputDevice
@@ -46,7 +45,6 @@ LowEn = DigitalOutputDevice("GPIO12", active_high=False, initial_value=True)
 #make sure that I2C is enabled in RPi config
 I2C1 = smbus.SMBus(DEVICE_BUS) #bus 1 is pin 3 and 5 of the header
 
-
 def SwitchState():
     Switches = Switch1.value + Switch2.value * 2 + Switch3.value * 4 + Switch4.value * 8
     print("Test Configuration = ",Switches)
@@ -81,7 +79,7 @@ def RelayState(Low, Mid, High): #Boolens
         Mid = 1
         High = 1
 
-    if Low and Mid:
+    elif Low and Mid:
         LowEn.on()
         MidEn.on()
         HighEn.off()
@@ -244,17 +242,19 @@ while True:
             Count = Count + 1
             HighTime = time()
 
-    AverageCurrent = CurrentSum/Count
-    print("Average Active Current = ", AverageCurrent)
-
-    if(AverageCurrent > currentAwake):
-        FailText = "Average Awake Current Over Max"
-        Pass = False
 
     if not Pass:
         TestResult(False, FailText)
     
     else:
+        AverageCurrent = CurrentSum/Count
+        print("Average Active Current = ", AverageCurrent)
+
+        if(AverageCurrent > currentAwake):
+            FailText = "Average Awake Current Over Max"
+            Pass = False
+
+    if Pass:
         print("High Current Stage Conplete\n")
         #check if we are sleeping
         Current = CurrentRead(False, False, True)
@@ -280,7 +280,7 @@ while True:
             FailText = "DUT is not in low power sleep state"
             Pass = False
 
-        TestResult(Pass, FailText)
+    TestResult(Pass, FailText)
 
 
 
