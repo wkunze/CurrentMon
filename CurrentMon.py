@@ -259,6 +259,8 @@ while True:
         #check if we are sleeping
         Current = CurrentRead(False, False, True)
         if Current < 1000: #1mA
+            Highstart = time()
+            HighTime = time()
             RelayState(False,True,True) #make before break
             RelayState(False,True,False) #switch to 330uA resistor
             
