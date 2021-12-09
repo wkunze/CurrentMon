@@ -86,23 +86,7 @@ def RelayState(Low, Mid, High): #Boolens
         Low = 1
         Mid = 1
         High = 0
-
-    elif High:
-        LowEn.off()
-        MidEn.off()
-        HighEn.on()
-        Low = 0
-        Mid = 0
-        High = 1
     
-    elif Mid:
-        LowEn.off()
-        MidEn.on()
-        HighEn.off()
-        Low = 0
-        Mid = 1
-        High = 0
-
     elif Low:
         LowEn.on()
         MidEn.off()
@@ -111,13 +95,21 @@ def RelayState(Low, Mid, High): #Boolens
         Mid = 0
         High = 0
 
-    else:
+    elif Mid:
         LowEn.off()
-        MidEn.off()
+        MidEn.on()
         HighEn.off()
         Low = 0
-        Mid = 0
+        Mid = 1
         High = 0
+
+    else: #default to high on
+        LowEn.off()
+        MidEn.off()
+        HighEn.on()
+        Low = 0
+        Mid = 0
+        High = 1
 
     return Low, Mid, High
 
@@ -132,7 +124,7 @@ def TestResult(Result, FailCode):
         print(FailCode)
         print("***** Fail *****")
 
-    RelayState(False, False, False)
+    RelayState(False, False, True)
         
     return Result
 
@@ -159,7 +151,7 @@ def CurrentRead(Low,Mid,High) :
 
 #initialization
 
-RelayState(False, False, False)
+RelayState(False, False, True)
 LEDsOff()
 #set for continuous sampling on ADC, FSR = +/-4.096V  Rest is defaults
 I2C1.write_i2c_block_data(DEVICE_ADDR,0x01,[0x82,0x83])
@@ -262,7 +254,7 @@ while True:
             Highstart = time()
             HighTime = time()
             RelayState(False,True,True) #make before break
-            RelayState(False,True,False) #switch to 330uA resistor
+            RelayState(False,True,False) #switch to 330uA range
             
             while (Pass) and ((HighTime - Highstart) < highDuration) and (not Sleep):
                 Current = CurrentRead(False, False, True)
